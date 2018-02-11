@@ -2,7 +2,7 @@
   "name": "fbmock",
   "version": "0.1.0",
   "description": "Super simple facebook database mock",
-  "main": "index.js",
+  "main": "fbmock.js",
   "scripts": {
     "test": "jest"
   },
