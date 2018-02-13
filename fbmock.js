@@ -143,7 +143,7 @@ class MockRef {
   }
 
   transaction(mutator) {
-    var newval = mutator(this._get());
+    var newval = mutator(this._get() || null);
     if (typeof newval !== 'undefined') {
       this.set(newval);
     }
