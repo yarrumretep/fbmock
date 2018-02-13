@@ -47,6 +47,8 @@ describe("FBMock", () => {
     ref.on('value', cb);
     return ref.set('hello')
       .then(() => ref.set('goodbye'))
+      .then(() => ref.off('value', cb))
+      .then(() => ref.set('hello again'))
       .then(() => {
         expect(cb.mock.calls.length).toBe(3);
         expect(cb.mock.calls[0][0].val()).toBeNull();
