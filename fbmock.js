@@ -4,9 +4,11 @@ const {
   isEqual,
   get,
   keys,
-  assign
+  assign,
+  pull
 } = require('lodash');
 const p = require('path');
+const assert = require('assert');
 
 class MockRef {
 
@@ -59,6 +61,11 @@ class MockRef {
       return this.remove();
     } else {
       set(this._data, this._path, value);
+      var o = this.parent._get() || this._data;
+      if (o.___subscriptions && o.___subscriptions.value) {
+        var snap = this.snap();
+        o.___subscriptions.value.forEach(sub => sub(snap))
+      }
       return Promise.resolve(this);
     }
   }
@@ -84,12 +91,39 @@ class MockRef {
     }
   }
 
-  once(event) {
-    return Promise.resolve({
+  snap() {
+    const val = this._get() || null;
+    return {
       ref: this,
-      val: () => this._get(),
+      val: () => val,
       key: this.key
-    });
+    }
+  }
+
+  once(event) {
+    assert(event === 'value', "fbmock only knows how to once('value')");
+    return Promise.resolve(this.snap());
+  }
+
+  on(event, cb) {
+    assert(event === 'value', "fbmock only knows how to on('value')");
+    cb(this.snap());
+    var o = this.parent._get() || this._data;
+    if (!o.___subscriptions) {
+      o.___subscriptions = {}
+    }
+    if (!o.___subscriptions.value) {
+      o.___subscriptions.value = []
+    }
+    o.___subscriptions.value.push(cb);
+  }
+
+  off(event, cb) {
+    assert(event === 'value', "fbmock only knows how to on('value')");
+    var o = this.parent._get() || this._data;
+    if (o.___subscriptions && o.___subscriptions.value) {
+      pull(o.___subscriptions.value, cb);
+    }
   }
 
   remove() {
@@ -113,7 +147,7 @@ class MockRef {
     return Promise.resolve({
       committed: typeof newval !== 'undefined',
       snapshot: {
-        ref:this,
+        ref: this,
         val: () => this._get(),
         key: this.key
       }
